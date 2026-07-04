@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>שף מילים — משחק המילים בעברית | הורדה חינם</title>
+<meta name="description" content="שף מילים: משחק חשיבה ממכר בעברית. הרכיבו את כל המילים מרצף אותיות, עזרו למשה השף להגיש את המנות. הורדה חינם מ-Google Play.">
+<link rel="icon" href="https://play-lh.googleusercontent.com/RjoXdWufpfzuZTaD5smIr_ebJFEvzBXA_tj7XvCzrTXo8FL_jfWfg9sahc_t98QwYmXL6UEK7nO_2KcEiMhcPg=s64">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#221410;
+    --bg-2:#2e1c14;
+    --wood:#5c3a21;
+    --wood-light:#7a4f2d;
+    --tile:#f7e8c9;
+    --tile-shadow:#cdb289;
+    --tile-ink:#3a2414;
+    --saffron:#f0a63c;
+    --saffron-deep:#d98a1f;
+    --tomato:#e25837;
+    --text:#f3e7d3;
+    --muted:#c9b49a;
+    --ok:#8fbb6e;
+    --radius:18px;
+    --font-display:'Secular One',sans-serif;
+    --font-body:'Heebo',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--font-body);
+    background:var(--bg);
+    color:var(--text);
+    overflow-x:hidden;
+    line-height:1.6;
+  }
+  ::selection{background:var(--saffron);color:var(--tile-ink)}
+  img{max-width:100%;display:block}
+  a{color:inherit}
+
+  /* ---------- buttons ---------- */
+  .btn-play{
+    display:inline-flex;align-items:center;gap:14px;
+    background:linear-gradient(180deg,var(--saffron),var(--saffron-deep));
+    color:var(--tile-ink);text-decoration:none;
+    font-family:var(--font-display);font-size:1.25rem;
+    padding:16px 30px;border-radius:60px;
+    box-shadow:0 6px 0 #9c6212,0 14px 30px rgba(0,0,0,.45);
+    transition:transform .15s ease,box-shadow .15s ease;
+    position:relative;
+  }
+  .btn-play:hover{transform:translateY(-3px);box-shadow:0 9px 0 #9c6212,0 20px 36px rgba(0,0,0,.5)}
+  .btn-play:active{transform:translateY(2px);box-shadow:0 3px 0 #9c6212,0 8px 18px rgba(0,0,0,.4)}
+  .btn-play svg{width:26px;height:26px;flex-shrink:0}
+  .btn-play small{display:block;font-family:var(--font-body);font-weight:500;font-size:.72rem;opacity:.75;line-height:1}
+  .btn-play .btn-txt{text-align:right;line-height:1.15}
+  .btn-play:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--saffron);outline-offset:3px}
+
+  /* ---------- header ---------- */
+  header{
+    position:fixed;top:0;right:0;left:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px clamp(16px,4vw,48px);
+    background:rgba(34,20,16,.72);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(247,232,201,.08);
+    transform:translateY(-100%);
+    transition:transform .35s ease;
+  }
+  header.show{transform:translateY(0)}
+  .brand{display:flex;align-items:center;gap:12px;font-family:var(--font-display);font-size:1.1rem}
+  .brand img{width:40px;height:40px;border-radius:11px;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+  .header-cta{
+    font-family:var(--font-display);font-size:.95rem;text-decoration:none;
+    background:var(--saffron);color:var(--tile-ink);
+    padding:9px 20px;border-radius:40px;
+    box-shadow:0 3px 0 #9c6212;transition:transform .15s;
+  }
+  .header-cta:hover{transform:translateY(-2px)}
+
+  /* ---------- hero ---------- */
+  .hero{
+    min-height:100svh;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    text-align:center;position:relative;
+    padding:clamp(90px,12vh,140px) 20px 80px;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -10%,rgba(240,166,60,.16),transparent 60%),
+      radial-gradient(ellipse 60% 40% at 85% 100%,rgba(226,88,55,.10),transparent 65%),
+      linear-gradient(180deg,var(--bg) 0%,var(--bg-2) 100%);
+    overflow:hidden;
+  }
+  /* floating background tiles */
+  .float-tile{
+    position:absolute;font-family:var(--font-display);
+    color:var(--tile-ink);background:var(--tile);
+    border-radius:12px;display:grid;place-items:center;
+    box-shadow:0 4px 0 var(--tile-shadow),0 10px 24px rgba(0,0,0,.35);
+    opacity:.12;pointer-events:none;user-select:none;
+    animation:drift 12s ease-in-out infinite;
+  }
+  @keyframes drift{
+    0%,100%{transform:translateY(0) rotate(var(--rot,0deg))}
+    50%{transform:translateY(-26px) rotate(calc(var(--rot,0deg) + 4deg))}
+  }
+  .hero-icon{
+    width:clamp(96px,14vw,136px);height:auto;border-radius:26%;
+    box-shadow:0 12px 40px rgba(0,0,0,.55),0 0 0 4px rgba(247,232,201,.12);
+    margin-bottom:26px;
+    animation:pop-in .7s cubic-bezier(.2,1.4,.4,1) both;
+  }
+  @keyframes pop-in{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+
+  .hero-tiles{display:flex;gap:clamp(6px,1.4vw,12px);justify-content:center;margin-bottom:20px;direction:rtl}
+  .hero-tiles .t{
+    font-family:var(--font-display);
+    font-size:clamp(2.4rem,8.5vw,5rem);
+    color:var(--tile-ink);background:var(--tile);
+    width:clamp(58px,11.5vw,110px);height:clamp(58px,11.5vw,110px);
+    display:grid;place-items:center;border-radius:16px;
+    box-shadow:0 6px 0 var(--tile-shadow),0 16px 30px rgba(0,0,0,.4);
+    opacity:0;animation:tile-drop .6s cubic-bezier(.2,1.4,.4,1) forwards;
+    animation-delay:calc(var(--i)*.12s + .25s);
+  }
+  .hero-tiles .t.space{background:transparent;box-shadow:none;width:clamp(16px,3vw,34px)}
+  @keyframes tile-drop{
+    from{opacity:0;transform:translateY(-70px) rotate(-8deg)}
+    to{opacity:1;transform:translateY(0) rotate(0)}
+  }
+  .hero h1{
+    font-family:var(--font-display);font-weight:400;
+    font-size:clamp(1.35rem,3.6vw,2.1rem);
+    color:var(--saffron);letter-spacing:.01em;margin-bottom:14px;
+  }
+  .hero p.sub{
+    max-width:620px;font-size:clamp(1rem,2.2vw,1.2rem);
+    color:var(--muted);margin-bottom:34px;font-weight:300;
+  }
+  .hero p.sub b{color:var(--text);font-weight:500}
+  .stats{
+    display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:34px;
+  }
+  .stat{
+    background:rgba(247,232,201,.07);
+    border:1px solid rgba(247,232,201,.14);
+    padding:10px 20px;border-radius:14px;
+    font-size:.95rem;color:var(--muted);
+    display:flex;align-items:center;gap:8px;
+  }
+  .stat b{color:var(--text);font-family:var(--font-display);font-weight:400;font-size:1.15rem}
+  .stat .star{color:var(--saffron)}
+  .scroll-hint{
+    position:absolute;bottom:22px;right:50%;transform:translateX(50%);
+    color:var(--muted);font-size:.85rem;opacity:.7;
+    animation:bob 2s ease-in-out infinite;
+  }
+  @keyframes bob{0%,100%{transform:translate(50%,0)}50%{transform:translate(50%,8px)}}
+
+  /* ---------- sections ---------- */
+  section{padding:clamp(70px,10vw,120px) 20px;position:relative}
+  .wrap{max-width:1080px;margin:0 auto}
+  .eyebrow{
+    font-family:var(--font-body);font-weight:700;font-size:.85rem;
+    letter-spacing:.14em;color:var(--tomato);text-transform:uppercase;
+    margin-bottom:10px;display:block;
+  }
+  h2{
+    font-family:var(--font-display);font-weight:400;
+    font-size:clamp(1.7rem,4.5vw,2.7rem);
+    margin-bottom:16px;line-height:1.25;
+  }
+  .lead{color:var(--muted);max-width:640px;font-size:1.05rem;font-weight:300}
+
+  .reveal{opacity:0;transform:translateY(34px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  /* ---------- demo ---------- */
+  .demo-section{
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 0%,rgba(226,88,55,.08),transparent 60%),
+      var(--bg-2);
+    border-top:1px solid rgba(247,232,201,.06);
+    border-bottom:1px solid rgba(247,232,201,.06);
+  }
+  .demo-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,70px);
+    align-items:center;margin-top:40px;
+  }
+  @media(max-width:820px){.demo-grid{grid-template-columns:1fr}}
+
+  .board{
+    background:linear-gradient(160deg,var(--wood),#4a2d18);
+    border-radius:24px;padding:clamp(20px,3vw,32px);
+    box-shadow:inset 0 2px 0 rgba(247,232,201,.14),0 20px 50px rgba(0,0,0,.45);
+    border:1px solid rgba(0,0,0,.3);
+  }
+  .board h3{
+    font-family:var(--font-display);font-weight:400;font-size:1.15rem;
+    color:var(--tile);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .board h3 .count{font-size:.95rem;color:var(--saffron)}
+  .word-slots{display:flex;flex-direction:column;gap:18px}
+  .slot-group{display:flex;flex-wrap:wrap;gap:10px}
+  .word-slot{display:flex;gap:5px;direction:rtl}
+  .word-slot .cell{
+    width:38px;height:38px;border-radius:9px;
+    background:rgba(0,0,0,.28);
+    border:1.5px dashed rgba(247,232,201,.28);
+    display:grid;place-items:center;
+    font-family:var(--font-display);font-size:1.25rem;color:var(--tile-ink);
+    transition:all .35s ease;
+  }
+  .word-slot.found .cell{
+    background:var(--tile);border-style:solid;border-color:var(--tile-shadow);
+    box-shadow:0 3px 0 var(--tile-shadow);
+    animation:cell-pop .4s cubic-bezier(.2,1.5,.4,1);
+  }
+  @keyframes cell-pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+  .wheel-area{display:flex;flex-direction:column;align-items:center;gap:18px}
+  .current-word{
+    min-height:56px;display:flex;gap:6px;direction:rtl;align-items:center;justify-content:center;
+  }
+  .current-word .c{
+    width:46px;height:46px;background:var(--tile);color:var(--tile-ink);
+    font-family:var(--font-display);font-size:1.5rem;
+    display:grid;place-items:center;border-radius:11px;
+    box-shadow:0 4px 0 var(--tile-shadow);
+    animation:cell-pop .25s ease;
+  }
+  .current-word .placeholder{color:var(--muted);font-size:.95rem;font-weight:300}
+  .current-word.shake{animation:shake .4s ease}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}
+  }
+  .wheel{
+    position:relative;width:min(280px,72vw);aspect-ratio:1;
+    background:radial-gradient(circle at 50% 42%,#3b2415,#241409 78%);
+    border-radius:50%;
+    box-shadow:inset 0 4px 18px rgba(0,0,0,.6),0 10px 30px rgba(0,0,0,.4),0 0 0 8px var(--wood),0 0 0 9px rgba(0,0,0,.35);
+  }
+  .wheel svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .wheel svg line{stroke:var(--saffron);stroke-width:5;stroke-linecap:round;opacity:.9}
+  .wheel .letter{
+    position:absolute;width:70px;height:70px;border-radius:50%;
+    background:var(--tile);color:var(--tile-ink);border:none;cursor:pointer;
+    font-family:var(--font-display);font-size:2rem;
+    box-shadow:0 5px 0 var(--tile-shadow),0 10px 18px rgba(0,0,0,.4);
+    transform:translate(50%,-50%);
+    transition:transform .15s,box-shadow .15s,background .15s;
+  }
+  .wheel .letter:hover{transform:translate(50%,-50%) scale(1.08)}
+  .wheel .letter.used{
+    background:var(--saffron);
+    box-shadow:0 3px 0 #9c6212,0 6px 12px rgba(0,0,0,.35);
+    transform:translate(50%,-50%) scale(.93);
+  }
+  .demo-actions{display:flex;gap:12px}
+  .demo-btn{
+    font-family:var(--font-display);font-size:1.05rem;border:none;cursor:pointer;
+    padding:12px 26px;border-radius:40px;transition:transform .15s;
+  }
+  .demo-btn:hover{transform:translateY(-2px)}
+  .demo-btn.submit{background:var(--tomato);color:#fff;box-shadow:0 4px 0 #a83a20}
+  .demo-btn.clear{background:rgba(247,232,201,.12);color:var(--text);box-shadow:0 4px 0 rgba(0,0,0,.3)}
+  .demo-msg{min-height:26px;font-size:.95rem;color:var(--saffron);font-weight:500;text-align:center}
+  .demo-done{
+    display:none;text-align:center;background:rgba(143,187,110,.1);
+    border:1px solid rgba(143,187,110,.35);border-radius:16px;
+    padding:20px;margin-top:8px;
+  }
+  .demo-done.show{display:block;animation:cell-pop .5s ease}
+  .demo-done p{font-family:var(--font-display);color:var(--ok);font-size:1.2rem;margin-bottom:14px}
+
+  /* ---------- story ---------- */
+  .story-grid{
+    display:grid;grid-template-columns:auto 1fr;gap:clamp(24px,4vw,50px);
+    align-items:center;margin-top:34px;
+  }
+  @media(max-width:700px){.story-grid{grid-template-columns:1fr;text-align:center;justify-items:center}}
+  .chef-card{
+    width:clamp(180px,24vw,250px);border-radius:26px;overflow:hidden;
+    box-shadow:0 18px 44px rgba(0,0,0,.5),0 0 0 4px rgba(247,232,201,.1);
+    transform:rotate(-3deg);
+  }
+  .story-text p{color:var(--muted);font-size:1.08rem;font-weight:300;margin-bottom:14px;max-width:560px}
+  .story-text p b{color:var(--text);font-weight:500}
+  .story-text .quote{
+    font-family:var(--font-display);color:var(--saffron);
+    font-size:clamp(1.2rem,2.6vw,1.5rem);border-right:4px solid var(--tomato);
+    padding-right:16px;margin:22px 0;line-height:1.5;
+  }
+  @media(max-width:700px){.story-text .quote{border-right:none;border-top:4px solid var(--tomato);padding:14px 0 0}}
+
+  /* ---------- gallery ---------- */
+  .gallery-section{background:var(--bg-2);border-top:1px solid rgba(247,232,201,.06);border-bottom:1px solid rgba(247,232,201,.06)}
+  .gallery{
+    display:flex;gap:20px;overflow-x:auto;padding:34px 4px 20px;
+    scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    scrollbar-color:var(--wood) transparent;
+  }
+  .shot{
+    flex:0 0 min(440px,82vw);scroll-snap-align:center;
+    border-radius:20px;overflow:hidden;
+    box-shadow:0 14px 36px rgba(0,0,0,.5),0 0 0 5px var(--wood),0 0 0 6px rgba(0,0,0,.4);
+    transition:transform .3s ease;background:#000;
+  }
+  .shot:hover{transform:translateY(-6px) scale(1.015)}
+  .shot img,.shot video{width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+  .gallery-hint{text-align:center;color:var(--muted);font-size:.85rem;opacity:.7;margin-top:8px}
+
+  /* ---------- benefits ---------- */
+  .bene-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:18px;margin-top:44px;
+  }
+  .bene{
+    background:linear-gradient(170deg,rgba(247,232,201,.06),rgba(247,232,201,.02));
+    border:1px solid rgba(247,232,201,.1);
+    border-radius:var(--radius);padding:28px 24px;
+    transition:transform .25s ease,border-color .25s ease;
+  }
+  .bene:hover{transform:translateY(-6px);border-color:rgba(240,166,60,.4)}
+  .bene .emoji{font-size:2.1rem;display:block;margin-bottom:14px}
+  .bene h3{font-family:var(--font-display);font-weight:400;font-size:1.2rem;margin-bottom:8px;color:var(--saffron)}
+  .bene p{color:var(--muted);font-size:.95rem;font-weight:300}
+
+  /* ---------- reviews ---------- */
+  .rating-hero{
+    display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin:30px 0 34px;
+  }
+  .rating-num{font-family:var(--font-display);font-size:4rem;color:var(--saffron);line-height:1}
+  .rating-meta .stars{color:var(--saffron);font-size:1.3rem;letter-spacing:3px}
+  .rating-meta p{color:var(--muted);font-size:.9rem}
+  .review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+  .review{
+    background:var(--tile);color:var(--tile-ink);
+    border-radius:var(--radius);padding:26px;
+    box-shadow:0 6px 0 var(--tile-shadow),0 16px 34px rgba(0,0,0,.35);
+    transform:rotate(-1deg);
+  }
+  .review:nth-child(2){transform:rotate(1.2deg)}
+  .review .stars{color:var(--saffron-deep);margin-bottom:10px;font-size:1.05rem;letter-spacing:2px}
+  .review p{font-size:1.05rem;font-weight:500;margin-bottom:12px}
+  .review .who{font-size:.85rem;opacity:.65}
+
+  /* ---------- final CTA ---------- */
+  .final{
+    text-align:center;
+    background:
+      radial-gradient(ellipse 80% 70% at 50% 110%,rgba(240,166,60,.18),transparent 65%),
+      var(--bg);
+  }
+  .final h2{font-size:clamp(1.9rem,5vw,3rem)}
+  .final .lead{margin:0 auto 38px}
+  .final-tiles{display:flex;gap:8px;justify-content:center;margin-bottom:26px;direction:rtl}
+  .final-tiles .t{
+    font-family:var(--font-display);font-size:1.6rem;color:var(--tile-ink);
+    background:var(--tile);width:52px;height:52px;display:grid;place-items:center;
+    border-radius:12px;box-shadow:0 4px 0 var(--tile-shadow);
+    animation:drift 6s ease-in-out infinite;animation-delay:calc(var(--i)*.35s);
+  }
+  .privacy-note{margin-top:22px;color:var(--muted);font-size:.85rem;opacity:.85}
+
+  footer{
+    border-top:1px solid rgba(247,232,201,.08);
+    padding:34px 20px;text-align:center;color:var(--muted);font-size:.85rem;font-weight:300;
+  }
+  footer .links{display:flex;gap:22px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+  footer a{color:var(--muted);text-decoration:none;border-bottom:1px solid rgba(247,232,201,.25)}
+  footer a:hover{color:var(--saffron)}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001s !important;transition-duration:.001s !important}
+    .reveal{opacity:1;transform:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header id="topbar">
+  <div class="brand">
+    <img src="https://play-lh.googleusercontent.com/RjoXdWufpfzuZTaD5smIr_ebJFEvzBXA_tj7XvCzrTXo8FL_jfWfg9sahc_t98QwYmXL6UEK7nO_2KcEiMhcPg=s96" alt="אייקון שף מילים">
+    <span>שף מילים</span>
+  </div>
+  <a class="header-cta" href="https://play.google.com/store/apps/details?id=com.liorKosherGames.wordchef" target="_blank" rel="noopener">להורדה חינם</a>
+</header>
+
+<!-- ============ HERO ============ -->
+<div class="hero">
+  <span class="float-tile" style="top:14%;right:8%;width:64px;height:64px;font-size:2rem;--rot:-9deg;animation-delay:0s">ל</span>
+  <span class="float-tile" style="top:24%;left:7%;width:52px;height:52px;font-size:1.6rem;--rot:7deg;animation-delay:1.4s">ח</span>
+  <span class="float-tile" style="bottom:20%;right:14%;width:46px;height:46px;font-size:1.4rem;--rot:12deg;animation-delay:2.6s">ם</span>
+  <span class="float-tile" style="bottom:28%;left:12%;width:70px;height:70px;font-size:2.2rem;--rot:-6deg;animation-delay:.8s">ק</span>
+  <span class="float-tile" style="top:52%;left:3%;width:44px;height:44px;font-size:1.3rem;--rot:15deg;animation-delay:3.4s">ד</span>
+  <span class="float-tile" style="top:44%;right:3%;width:56px;height:56px;font-size:1.7rem;--rot:-14deg;animation-delay:2s">ר</span>
+
+  <img class="hero-icon" src="https://play-lh.googleusercontent.com/RjoXdWufpfzuZTaD5smIr_ebJFEvzBXA_tj7XvCzrTXo8FL_jfWfg9sahc_t98QwYmXL6UEK7nO_2KcEiMhcPg=w480" alt="שף מילים — משחק מילים בעברית" width="136" height="136">
+
+  <div class="hero-tiles" aria-hidden="true">
+    <span class="t" style="--i:0">ש</span><span class="t" style="--i:1">ף</span><span class="t space"></span><span class="t" style="--i:2">מ</span><span class="t" style="--i:3">י</span><span class="t" style="--i:4">ל</span><span class="t" style="--i:5">י</span><span class="t" style="--i:6">ם</span>
+  </div>
+
+  <h1>משחק המילים שמבשל לכם את המוח — בקטע טוב</h1>
+  <p class="sub">מרצף אחד של אותיות מסתתרות <b>עשרות מילים בעברית</b>. תמצאו את כולן? משחק חשיבה ממכר, נקי ופשוט — מתאים לכל גיל, מגיל 3 ועד סבתא.</p>
+
+  <a class="btn-play" href="https://play.google.com/store/apps/details?id=com.liorKosherGames.wordchef" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.6 2.3c-.4.4-.6 1-.6 1.7v16c0 .7.2 1.3.6 1.7l.1.1 9-9v-.2l-9-9-.1-.1z"/><path d="M15.7 15.8 12.7 12.8v-.2l3-3 .1.1 3.6 2c1 .6 1 1.5 0 2.1l-3.6 2-.1 0z" opacity=".8"/><path d="M15.8 15.7 12.7 12.7 3.6 21.7c.3.3.9.4 1.5 0l10.7-6z" opacity=".6"/><path d="M15.8 8.6 5.1 2.6c-.6-.3-1.2-.3-1.5 0l9.1 9.1 3.1-3.1z" opacity=".9"/></svg>
+    <span class="btn-txt"><small>חינם ב-</small>Google Play</span>
+  </a>
+
+  <div class="stats">
+    <div class="stat"><span class="star">★</span><b>4.0</b> 246 ביקורות</div>
+    <div class="stat"><b>+10K</b> הורדות</div>
+    <div class="stat">🎂 מתאים לגיל 3+</div>
+    <div class="stat">🔒 ללא איסוף נתונים</div>
+  </div>
+
+  <div class="scroll-hint">↓ גללו לטעימה מהמשחק</div>
+</div>
+
+<!-- ============ DEMO ============ -->
+<section class="demo-section" id="demo">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">טעימה חינם, בלי להוריד כלום</span>
+      <h2>נסו עכשיו: כמה מילים תמצאו מ-ש · מ · ר?</h2>
+      <p class="lead">לחצו על האותיות בגלגל כדי להרכיב מילה, ואז הגישו את המנה. במטבח הזה מסתתרות <b>8 מילים</b>. בהצלחה, שף!</p>
+    </div>
+
+    <div class="demo-grid reveal">
+      <!-- wheel -->
+      <div class="wheel-area">
+        <div class="current-word" id="currentWord"><span class="placeholder">המילה שלכם תופיע כאן…</span></div>
+        <div class="wheel" id="wheel">
+          <svg id="wheelLines"></svg>
+          <button class="letter" data-i="0" style="top:16%;right:50%">ש</button>
+          <button class="letter" data-i="1" style="top:66%;right:22%">מ</button>
+          <button class="letter" data-i="2" style="top:66%;right:78%">ר</button>
+        </div>
+        <div class="demo-actions">
+          <button class="demo-btn submit" id="btnSubmit">🍽️ הגשה</button>
+          <button class="demo-btn clear" id="btnClear">ניקוי</button>
+        </div>
+        <div class="demo-msg" id="demoMsg"></div>
+      </div>
+
+      <!-- board -->
+      <div class="board">
+        <h3>המנות של משה <span class="count"><span id="foundCount">0</span>/8</span></h3>
+        <div class="word-slots" id="wordSlots"></div>
+        <div class="demo-done" id="demoDone">
+          <p>👨‍🍳 כל הכבוד, שף! הגשתם את כל המנות</p>
+          <a class="btn-play" style="font-size:1.05rem;padding:12px 24px" href="https://play.google.com/store/apps/details?id=com.liorKosherGames.wordchef" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.6 2.3c-.4.4-.6 1-.6 1.7v16c0 .7.2 1.3.6 1.7l.1.1 9-9v-.2l-9-9-.1-.1z"/><path d="M15.7 15.8 12.7 12.8v-.2l3-3 .1.1 3.6 2c1 .6 1 1.5 0 2.1l-3.6 2-.1 0z" opacity=".8"/><path d="M15.8 15.7 12.7 12.7 3.6 21.7c.3.3.9.4 1.5 0l10.7-6z" opacity=".6"/><path d="M15.8 8.6 5.1 2.6c-.6-.3-1.2-.3-1.5 0l9.1 9.1 3.1-3.1z" opacity=".9"/></svg>
+            <span class="btn-txt">להמשיך במשחק המלא</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STORY ============ -->
+<section id="story">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">הסיפור מאחורי המטבח</span>
+      <h2>הכירו את משה, השף שלנו</h2>
+    </div>
+    <div class="story-grid reveal">
+      <div class="chef-card">
+        <img src="https://play-lh.googleusercontent.com/RjoXdWufpfzuZTaD5smIr_ebJFEvzBXA_tj7XvCzrTXo8FL_jfWfg9sahc_t98QwYmXL6UEK7nO_2KcEiMhcPg=w500" alt="משה השף — הדמות של שף מילים" loading="lazy">
+      </div>
+      <div class="story-text">
+        <p>משה עובד קשה מאוד במטבח כדי להכין לסועדים את המנות שהם הכי אוהבים. אבל בזמן האחרון משה קצת מבולבל — הוא פשוט לא מצליח להבין מה רשם במתכונים…</p>
+        <p class="quote">עזרו למשה להרכיב את המילים מהאותיות שהתערבבו — וביחד תגישו לסועדים את כל המנות.</p>
+        <p>מאחורי הסיפור החמוד מסתתר <b>אתגר חשיבה אמיתי</b>: בכל שלב מקבלים רצף אותיות, ועליכם למצוא את <b>כל</b> המילים שאפשר להרכיב מהן. השלבים הראשונים קלילים — אבל ככל שמתקדמים, המנות נהיות מסובכות והמוח מתחיל להזיע.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GALLERY ============ -->
+<section class="gallery-section" id="gallery">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">הצצה למטבח</span>
+      <h2>ככה זה נראה מבפנים</h2>
+    </div>
+  </div>
+  <div class="gallery reveal">
+    <div class="shot" id="trailerShot">
+      <video src="https://play-games.googleusercontent.com/vp/mp4/1280x720/sT2FwHBCCtI.mp4" controls muted playsinline preload="metadata" onerror="document.getElementById('trailerShot').style.display='none'"></video>
+    </div>
+    <div class="shot"><img loading="lazy" src="https://play-lh.googleusercontent.com/FnfywUtu-LwioDyOPPbIgAFEo6eccVBGzjSzOOUvA-1uFazq4eEQobAhQxE9O86dq6lgVBzoF3XOIYxH-rkJ2Xw=w1052-h592" alt="צילום מסך מהמשחק שף מילים — גלגל אותיות"></div>
+    <div class="shot"><img loading="lazy" src="https://play-lh.googleusercontent.com/18vUh-K8mG5ms0Sglkqc601FYcpZ-c45GDeRU9qFibUqluI_ozpKclidsCg-N_TG3tNdUsPVhcoR-JWFkK4tGCA=w1052-h592" alt="צילום מסך מהמשחק שף מילים — לוח מילים"></div>
+    <div class="shot"><img loading="lazy" src="https://play-lh.googleusercontent.com/1VvClUkTh8-wfD8QW1r96uFtarS9mlXScx9IBiRGLIGC7Ag32xaf64UqhoxL-mrVLsFnX4c252GSjdo6B8Xq7A=w1052-h592" alt="צילום מסך מהמשחק שף מילים — שלב במשחק"></div>
+    <div class="shot"><img loading="lazy" src="https://play-lh.googleusercontent.com/NeKcuBiEGkqF-I-a2cd7lm1EcHCAyO5aih_2K2z2uBy66oW18jki4Jz9nu6xvwrR3k_dNeezMbkxKJWdjqOs=w1052-h592" alt="צילום מסך מהמשחק שף מילים — פתרון מילים"></div>
+    <div class="shot"><img loading="lazy" src="https://play-lh.googleusercontent.com/c2RAiNG4BhfBN8sB7cE5lImGdDKLWfIfol-XLcx_-N59kOOMyeyHPEcxw1ikQFbqSxB8-hdPeYGbebabaIkj4g8=w1052-h592" alt="צילום מסך מהמשחק שף מילים — התקדמות בשלבים"></div>
+  </div>
+  <p class="gallery-hint">← החליקו לצדדים לעוד צילומי מסך →</p>
+</section>
+
+<!-- ============ BENEFITS ============ -->
+<section id="why">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">למה דווקא שף מילים?</span>
+      <h2>5 דקות ביום — והמוח שלכם אומר תודה</h2>
+    </div>
+    <div class="bene-grid reveal">
+      <div class="bene">
+        <span class="emoji">🧠</span>
+        <h3>אימון אמיתי למוח</h3>
+        <p>חיפוש מילים מרצף אותיות מפעיל זיכרון, אוצר מילים וחשיבה גמישה. חמש דקות בהפסקת קפה — ואתם חדים יותר.</p>
+      </div>
+      <div class="bene">
+        <span class="emoji">🇮🇱</span>
+        <h3>עברית, כמו שצריך</h3>
+        <p>משחק מילים בעברית מלאה, שנבנה במיוחד לשפה שלנו — לא תרגום מאולתר מאנגלית. תגלו כמה מילים אתם באמת מכירים.</p>
+      </div>
+      <div class="bene">
+        <span class="emoji">👨‍👩‍👧‍👦</span>
+        <h3>מ-3 עד 103</h3>
+        <p>קליל מספיק לילדים, מאתגר מספיק למבוגרים. משחק מושלם לסבתא, לנסיעה ברכבת, או לתחרות משפחתית על הספה.</p>
+      </div>
+      <div class="bene">
+        <span class="emoji">🔒</span>
+        <h3>נקי ובטוח</h3>
+        <p>לא נאספים נתונים ולא משותף מידע עם צדדים שלישיים — הצהרה רשמית בדף המשחק ב-Google Play. מורידים ומשחקים בראש שקט.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REVIEWS ============ -->
+<section class="gallery-section" id="reviews">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow">מהסועדים שלנו</span>
+      <h2>שחקנים כבר טעמו — והם רוצים עוד</h2>
+      <div class="rating-hero">
+        <div class="rating-num">4.0</div>
+        <div class="rating-meta">
+          <div class="stars" aria-label="ארבעה כוכבים מתוך חמישה">★★★★☆</div>
+          <p>246 ביקורות · +10,000 הורדות ב-Google Play</p>
+        </div>
+      </div>
+    </div>
+    <div class="review-grid reveal">
+      <div class="review">
+        <div class="stars">★★★★★</div>
+        <p>"משחק מעולה עם פוטנציאל"</p>
+        <div class="who">Ahuva Bouzaglo · ביקורת מאומתת ב-Google Play</div>
+      </div>
+      <div class="review">
+        <div class="stars">★★★★★</div>
+        <p>"מהנה"</p>
+        <div class="who">שרון מירון · ביקורת מאומתת ב-Google Play</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final">
+  <div class="wrap reveal">
+    <div class="final-tiles" aria-hidden="true">
+      <span class="t" style="--i:0">ב</span><span class="t" style="--i:1">ת</span><span class="t" style="--i:2">א</span><span class="t" style="--i:3">ב</span><span class="t" style="--i:4">ו</span><span class="t" style="--i:5">ן</span>
+    </div>
+    <h2>המטבח פתוח. משה מחכה לכם.</h2>
+    <p class="lead">הורדה חינם, התחלה תוך שניות — והמילה הראשונה כבר על השולחן.</p>
+    <a class="btn-play" href="https://play.google.com/store/apps/details?id=com.liorKosherGames.wordchef" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.6 2.3c-.4.4-.6 1-.6 1.7v16c0 .7.2 1.3.6 1.7l.1.1 9-9v-.2l-9-9-.1-.1z"/><path d="M15.7 15.8 12.7 12.8v-.2l3-3 .1.1 3.6 2c1 .6 1 1.5 0 2.1l-3.6 2-.1 0z" opacity=".8"/><path d="M15.8 15.7 12.7 12.7 3.6 21.7c.3.3.9.4 1.5 0l10.7-6z" opacity=".6"/><path d="M15.8 8.6 5.1 2.6c-.6-.3-1.2-.3-1.5 0l9.1 9.1 3.1-3.1z" opacity=".9"/></svg>
+      <span class="btn-txt"><small>חינם ב-</small>Google Play</span>
+    </a>
+    <p class="privacy-note">🔒 ללא איסוף נתונים · מדורג לגיל 3+ · מכיל מודעות</p>
+  </div>
+</section>
+
+<footer>
+  <div class="links">
+    <a href="https://play.google.com/store/apps/details?id=com.liorKosherGames.wordchef" target="_blank" rel="noopener">דף המשחק ב-Google Play</a>
+    <a href="https://pages.flycricket.io/shp-mylym/privacy.html" target="_blank" rel="noopener">מדיניות פרטיות</a>
+    <a href="mailto:liorkoshergames@gmail.com">יצירת קשר</a>
+  </div>
+  <p>© שף מילים · פותח באהבה ע"י Lior Kosher Games, ישראל 🇮🇱</p>
+</footer>
+
+<script>
+/* ---------- sticky header ---------- */
+const topbar=document.getElementById('topbar');
+window.addEventListener('scroll',()=>{
+  topbar.classList.toggle('show',window.scrollY>window.innerHeight*0.55);
+},{passive:true});
+
+/* ---------- scroll reveals ---------- */
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}});
+},{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ---------- letter wheel demo ---------- */
+(function(){
+  const LETTERS=['ש','מ','ר'];
+  const VALID=['שם','שר','רם','רש','מש','שמר','רשם','רמש'];
+  const found=new Set();
+  let seq=[];
+
+  const wheel=document.getElementById('wheel');
+  const lines=document.getElementById('wheelLines');
+  const currentEl=document.getElementById('currentWord');
+  const msgEl=document.getElementById('demoMsg');
+  const slotsEl=document.getElementById('wordSlots');
+  const countEl=document.getElementById('foundCount');
+  const doneEl=document.getElementById('demoDone');
+  const letterBtns=[...wheel.querySelectorAll('.letter')];
+
+  /* normalize: trailing מ -> ם */
+  const normalize=w=>w.length&&w[w.length-1]==='מ'?w.slice(0,-1)+'ם':w;
+
+  /* build slots board, grouped by length */
+  const groups={2:VALID.filter(w=>w.length===2),3:VALID.filter(w=>w.length===3)};
+  const slotMap={};
+  [3,2].forEach(len=>{
+    const g=document.createElement('div');g.className='slot-group';
+    groups[len].forEach(w=>{
+      const s=document.createElement('div');s.className='word-slot';s.dataset.word=w;
+      for(let i=0;i<len;i++){const c=document.createElement('div');c.className='cell';s.appendChild(c)}
+      slotMap[w]=s;g.appendChild(s);
+    });
+    slotsEl.appendChild(g);
+  });
+
+  function centerOf(btn){
+    const wr=wheel.getBoundingClientRect(),br=btn.getBoundingClientRect();
+    return{x:br.left+br.width/2-wr.left,y:br.top+br.height/2-wr.top};
+  }
+  function redrawLines(){
+    lines.innerHTML='';
+    const wr=wheel.getBoundingClientRect();
+    lines.setAttribute('viewBox','0 0 '+wr.width+' '+wr.height);
+    for(let i=0;i<seq.length-1;i++){
+      const a=centerOf(letterBtns[seq[i]]),b=centerOf(letterBtns[seq[i+1]]);
+      const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);
+      l.setAttribute('x2',b.x);l.setAttribute('y2',b.y);
+      lines.appendChild(l);
+    }
+  }
+  function renderCurrent(){
+    currentEl.innerHTML='';
+    if(!seq.length){currentEl.innerHTML='<span class="placeholder">המילה שלכם תופיע כאן…</span>';return}
+    const word=normalize(seq.map(i=>LETTERS[i]).join(''));
+    [...word].forEach(ch=>{
+      const c=document.createElement('div');c.className='c';c.textContent=ch;currentEl.appendChild(c);
+    });
+  }
+  function setMsg(t,color){msgEl.textContent=t;msgEl.style.color=color||'var(--saffron)';}
+  function clearSeq(){
+    seq=[];letterBtns.forEach(b=>b.classList.remove('used'));
+    lines.innerHTML='';renderCurrent();
+  }
+  function shake(){currentEl.classList.remove('shake');void currentEl.offsetWidth;currentEl.classList.add('shake');}
+
+  letterBtns.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const i=+btn.dataset.i;
+      if(seq.includes(i))return;
+      seq.push(i);btn.classList.add('used');
+      renderCurrent();redrawLines();setMsg('');
+    });
+  });
+
+  document.getElementById('btnClear').addEventListener('click',()=>{clearSeq();setMsg('');});
+
+  document.getElementById('btnSubmit').addEventListener('click',()=>{
+    if(seq.length<2){setMsg('הרכיבו לפחות 2 אותיות 🙂');shake();return}
+    const word=normalize(seq.map(i=>LETTERS[i]).join(''));
+    if(found.has(word)){setMsg('"'+word+'" כבר על השולחן 😉');shake();clearSeq();return}
+    if(VALID.includes(word)){
+      found.add(word);
+      const slot=slotMap[word];
+      [...slot.children].forEach((c,i)=>c.textContent=word[i]);
+      slot.classList.add('found');
+      countEl.textContent=found.size;
+      setMsg('🍽️ "'+word+'" הוגשה! מנה מצוינת, שף','var(--ok)');
+      clearSeq();
+      if(found.size===VALID.length){doneEl.classList.add('show');setMsg('');}
+    }else{
+      setMsg('"'+word+'" לא במתכון של משה… נסו שוב','var(--tomato)');
+      shake();clearSeq();
+    }
+  });
+
+  window.addEventListener('resize',redrawLines);
+})();
+</script>
+</body>
+</html>
